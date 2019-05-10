@@ -29,14 +29,17 @@ class DivideAndOverShuffle(ShufflingStrategyAbstract):
 
 class CutAndMergeShuffle(ShufflingStrategyAbstract):
       def _shuffle_main(self, cards):
+            orig_len = len(cards)
             halfwayPoint = int(len(cards)/2)
-            half1 = cards[0:halfwayPoint]
+            half1 = cards[:halfwayPoint]
             half2 = cards[halfwayPoint:len(cards)]
             
             cards = []
             for i in range(halfwayPoint):
                   cards.append(half1[i])
                   cards.append(half2[i])
-            if (len(cards)%2 == 1):
+            
+            if orig_len%2 == 1:
                   cards.append(half2[len(half2)-1])
+                  
             return cards
