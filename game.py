@@ -72,7 +72,7 @@ class Lucky9Game(Game):
 				temp.remove(card_exact_value)
 
 		return len(temp) == 0
-			
+
 	def payout_winners(self):
 		for lucky9player in self.players:
 			if self.is_tie_with_dealer(lucky9player.player.cards_in_hand):
@@ -163,3 +163,50 @@ class Lucky9Dealer:
 
 	def handle_move(self):
 		return self.up_card.value < 5
+
+class Lucky9PayoutCalculator:
+	def _is_lucky_9(self, cards):
+		return self._get_total_value(cards) == 9
+
+	def _is_2_3_4(self, cards):
+		return sorted([c.value for c in cards]) == list(range(2,5))
+
+	def _is_suited(self, cards):
+		return all(card.suit == cards[0].suit for card in cards)
+
+	def _get_total_value(self, cards):
+		return sum([card.card_value() for card in cards])%10
+
+	def calculate_bonus_winning(self, dealer_up_card, player_cards):
+		if (dealer_up_card == None or len(player_cards) != 2):
+			raise ValueError('dealer up card is empty or player cards is not enough')
+
+		all_cards = [dealer_up_card, player_cards[0], player_cards[1]]
+
+		if (self._is_lucky_9(all_cards)):
+			if (self._is_2_3_4(all_cards)):
+				if (self._is_suited(all_cards)):
+					return 100
+				else:
+					return 40
+			elif (all(card.value == 3 for card in all_cards)):
+				if (self._is_suited(all_cards)):
+					return 200
+				else:
+					return 50
+			else:
+				if (self._is_suited(all_cards)):
+					return 30
+				else:
+					return 5
+
+		return 0
+
+	def calculate_tie_winning(self, dealer_cards, player_cards):
+		if (len(dealer_cards) != 3 or len(player_cards) != 3):
+			raise ValueError('dealer or player\'s cards is not enough')
+
+		if (self._get_total_value(dealer_cards) == self._get_total_value(player_cards)):
+			return 7
+
+		return 0

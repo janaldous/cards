@@ -1,5 +1,5 @@
 import unittest
-from game import Lucky9Game, Lucky9Dealer, Lucky9Player
+from game import Lucky9Game, Lucky9Dealer, Lucky9Player, Lucky9PayoutCalculator
 from player import Player, PlayerStrategy
 from shuffle import RandomShuffle
 from cards import Lucky9Card
@@ -63,33 +63,32 @@ class Lucky9GameTest(unittest.TestCase):
 		cards_in_hand = [card1, card2, card3]
 		self.assertFalse(Lucky9Game.is_lucky9(cards_in_hand))
 
-	def test_payout_player_lucky9_win(self):
-		game = Lucky9Game(MockShuffle())
-		card1 = Lucky9Card('spade', 2)
-		card2 = Lucky9Card('spade', 7)
-		card3 = Lucky9Card('spade', 10)
+	# def test_payout_player_lucky9_win(self):
+	# 	game = Lucky9Game(MockShuffle())
+	# 	card1 = Lucky9Card('spade', 2)
+	# 	card2 = Lucky9Card('spade', 7)
+	# 	card3 = Lucky9Card('spade', 10)
+	#
+	# 	cards_in_hand = [card1, card2, card3]
+	# 	player = Player(200, MockStrategy())
+	# 	game.add_player(player, 50)
+	# 	player.cards_in_hand = cards_in_hand
+	#
+	# 	game.payout_player(0)
+	# 	self.assertEqual(275, player.money)
 
-		cards_in_hand = [card1, card2, card3]
-		player = Player(200, MockStrategy())
-		game.add_player(player, 50)
-		player.cards_in_hand = cards_in_hand
-
-		game.payout_player(0)
-		self.assertEqual(275, player.money)
-
-	def test_payout_player_lucky9_lose(self):
-		game = Lucky9Game(MockShuffle())
-		card1 = Lucky9Card('spade', 3)
-		card2 = Lucky9Card('spade', 7)
-		card3 = Lucky9Card('spade', 10)
-
-		cards_in_hand = [card1, card2, card3]
-		player = Player(200, MockStrategy())
-		game.add_player(player, 50)
-		player.cards_in_hand = cards_in_hand
-
-		game.payout_player(0)
-		self.assertEqual(150, player.money)
+	# def test_payout_player_lucky9_lose(self):
+	# 	game = Lucky9Game(MockShuffle())
+	# 	card1 = Lucky9Card('spade', 3)
+	# 	card2 = Lucky9Card('spade', 7)
+	# 	card3 = Lucky9Card('spade', 10)
+	#
+	# 	player = Player(200, MockStrategy())
+	# 	game.add_player(player, 50)
+	# 	player.cards_in_hand = [card1, card2, card3]
+	#
+	# 	game.payout_player(0)
+	# 	self.assertEqual(150, player.money)
 
 	def test_is_tie_with_dealer(self):
 		game = Lucky9Game(MockShuffle())
@@ -103,7 +102,7 @@ class Lucky9GameTest(unittest.TestCase):
 
 		player_cards_in_hand = [player_card2, player_card1, player_card3]
 		dealer_cards_in_hand = [dealer_card1, dealer_card3, dealer_card2]
-		
+
 		game.dealer.cards_in_hand = dealer_cards_in_hand
 
 		self.assertTrue(game.is_tie_with_dealer(player_cards_in_hand))
@@ -120,7 +119,7 @@ class Lucky9GameTest(unittest.TestCase):
 
 		player_cards_in_hand = [player_card2, player_card1, player_card3]
 		dealer_cards_in_hand = [dealer_card1, dealer_card3, dealer_card2]
-		
+
 		game.dealer.cards_in_hand = dealer_cards_in_hand
 
 		self.assertFalse(game.is_tie_with_dealer(player_cards_in_hand))
@@ -174,16 +173,123 @@ class Lucky9DealerTest(unittest.TestCase):
 		dealer = Lucky9Dealer()
 		dealer.up_card = Lucky9Card('spade', 4)
 
-		self.assertTrue(dealer.pick_card())
+		self.assertTrue(dealer.handle_move())
 
 	def test_pick_card_on_boundary(self):
 		dealer = Lucky9Dealer()
 		dealer.up_card = Lucky9Card('spade', 5)
 
-		self.assertFalse(dealer.pick_card())
+		self.assertFalse(dealer.handle_move())
 
 	def test_pick_card_upper_boundary(self):
 		dealer = Lucky9Dealer()
 		dealer.up_card = Lucky9Card('spade', 6)
 
-		self.assertFalse(dealer.pick_card())
+		self.assertFalse(dealer.handle_move())
+
+
+class Lucky9PayoutBonusTest(unittest.TestCase):
+	def test_payout_bonus_player_not_enough_cards(self):
+		calculator = Lucky9PayoutCalculator()
+		dealer_up_card = Lucky9Card('spade', 1)
+		player_cards = [Lucky9Card('spade', 2)]
+		self.assertRaises(ValueError, calculator.calculate_bonus_winning, dealer_up_card, player_cards)
+
+	def test_payout_bonus_dealer_no_cards(self):
+		calculator = Lucky9PayoutCalculator()
+		dealer_up_card = None
+		player_cards = [Lucky9Card('spade', 3), Lucky9Card('spade', 3)]
+		self.assertRaises(ValueError, calculator.calculate_bonus_winning, dealer_up_card, player_cards)
+
+	def test_payout_bonus_lose(self):
+		calculator = Lucky9PayoutCalculator()
+		dealer_up_card = Lucky9Card('spade', 2)
+		player_cards = [Lucky9Card('spade', 3), Lucky9Card('club', 7)]
+		winning = calculator.calculate_bonus_winning(dealer_up_card, player_cards)
+		self.assertEqual(0, winning)
+
+	# lucky 9 and suited 3-3-3 win
+	def test_payout_bonus_scenario_suited_3_3_3(self):
+		calculator = Lucky9PayoutCalculator()
+		dealer_up_card = Lucky9Card('spade', 3)
+		player_cards = [Lucky9Card('spade', 3), Lucky9Card('spade', 3)]
+		winning = calculator.calculate_bonus_winning(dealer_up_card, player_cards)
+		self.assertEqual(200, winning)
+
+	# lucky 9 and suited 2-3-4 win
+	def test_payout_bonus_scenario_suited_2_3_4(self):
+		calculator = Lucky9PayoutCalculator()
+		dealer_up_card = Lucky9Card('spade', 3)
+		player_cards = [Lucky9Card('spade', 2), Lucky9Card('spade', 4)]
+		winning = calculator.calculate_bonus_winning(dealer_up_card, player_cards)
+		self.assertEqual(100, winning)
+
+	# lucky 9 and suited 2-3-4 win
+	def test_payout_bonus_scenario_any_3_3_3(self):
+		calculator = Lucky9PayoutCalculator()
+		dealer_up_card = Lucky9Card('club', 3)
+		player_cards = [Lucky9Card('spade', 3), Lucky9Card('diamond', 3)]
+		winning = calculator.calculate_bonus_winning(dealer_up_card, player_cards)
+		self.assertEqual(50, winning)
+
+	# lucky 9 and any 2-3-4 win
+	def test_payout_bonus_scenario_suited_2_3_4(self):
+		calculator = Lucky9PayoutCalculator()
+		dealer_up_card = Lucky9Card('club', 3)
+		player_cards = [Lucky9Card('spade', 2), Lucky9Card('club', 4)]
+		winning = calculator.calculate_bonus_winning(dealer_up_card, player_cards)
+		self.assertEqual(40, winning)
+
+	def test_payout_bonus_scenario_suited_9(self):
+		calculator = Lucky9PayoutCalculator()
+		dealer_up_card = Lucky9Card('club', 1)
+		player_cards = [Lucky9Card('club', 2), Lucky9Card('club', 6)]
+		winning = calculator.calculate_bonus_winning(dealer_up_card, player_cards)
+		self.assertEqual(30, winning)
+
+	def test_payout_bonus_scenario_any_total_9(self):
+		calculator = Lucky9PayoutCalculator()
+		dealer_up_card = Lucky9Card('spade', 1)
+		player_cards = [Lucky9Card('club', 2), Lucky9Card('diamond', 6)]
+		winning = calculator.calculate_bonus_winning(dealer_up_card, player_cards)
+		self.assertEqual(5, winning)
+
+	def test_payout_bonus_scenario_any_total_9_natural(self):
+		calculator = Lucky9PayoutCalculator()
+		dealer_up_card = Lucky9Card('spade', 10)
+		player_cards = [Lucky9Card('club', 3), Lucky9Card('diamond', 6)]
+		winning = calculator.calculate_bonus_winning(dealer_up_card, player_cards)
+		self.assertEqual(5, winning)
+
+class Lucky9PayoutTieTest(unittest.TestCase):
+	def test_payout_bonus_player_not_enough_cards(self):
+		calculator = Lucky9PayoutCalculator()
+		dealer_cards = [Lucky9Card('spade', 1), Lucky9Card('spade', 2),
+							Lucky9Card('spade', 3)]
+		player_cards = [Lucky9Card('spade', 2)]
+		self.assertRaises(ValueError, calculator.calculate_tie_winning, dealer_cards, player_cards)
+
+	def test_payout_bonus_dealer_not_enough_cards(self):
+		calculator = Lucky9PayoutCalculator()
+		dealer_cards = [Lucky9Card('spade', 2)]
+		player_cards = [Lucky9Card('spade', 1), Lucky9Card('spade', 2),
+							Lucky9Card('spade', 3)]
+		self.assertRaises(ValueError, calculator.calculate_tie_winning, dealer_cards, player_cards)
+
+	def test_payout_tie_scenario_lose(self):
+		calculator = Lucky9PayoutCalculator()
+		dealer_cards = [Lucky9Card('spade', 1), Lucky9Card('spade', 2),
+							Lucky9Card('spade', 3)]
+		player_cards = [Lucky9Card('club', 2), Lucky9Card('diamond', 6),
+							Lucky9Card('spade', 4)]
+		winning = calculator.calculate_tie_winning(dealer_cards, player_cards)
+		self.assertEqual(0, winning)
+
+	def test_payout_tie_scenario_win(self):
+		calculator = Lucky9PayoutCalculator()
+		dealer_cards = [Lucky9Card('spade', 1), Lucky9Card('spade', 2),
+							Lucky9Card('spade', 3)]
+		player_cards = [Lucky9Card('club', 6), Lucky9Card('diamond', 6),
+							Lucky9Card('spade', 4)]
+		winning = calculator.calculate_tie_winning(dealer_cards, player_cards)
+		self.assertEqual(7, winning)
