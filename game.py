@@ -165,7 +165,14 @@ class Lucky9Dealer:
 		return self.up_card.value < 5
 
 class Lucky9PayoutCalculator:
+	payout_lucky9 = 3/2
+	payout_tie = 7
+
 	def _is_lucky_9(self, cards):
+		return (self._get_total_value(cards) == 9
+			and all(card.card_value() in range(1, 10) for card in cards))
+
+	def _is_total_9(self, cards):
 		return self._get_total_value(cards) == 9
 
 	def _is_2_3_4(self, cards):
@@ -183,7 +190,7 @@ class Lucky9PayoutCalculator:
 
 		all_cards = [dealer_up_card, player_cards[0], player_cards[1]]
 
-		if (self._is_lucky_9(all_cards)):
+		if (self._is_total_9(all_cards)):
 			if (self._is_2_3_4(all_cards)):
 				if (self._is_suited(all_cards)):
 					return 100
@@ -207,6 +214,17 @@ class Lucky9PayoutCalculator:
 			raise ValueError('dealer or player\'s cards is not enough')
 
 		if (self._get_total_value(dealer_cards) == self._get_total_value(player_cards)):
-			return 7
+			return self.payout_tie
+
+		return 0
+
+	def calculate_bet_winning(self, dealer_cards, player_cards):
+		if (len(dealer_cards) != 3 or len(player_cards) != 3):
+			raise ValueError('dealer or player\'s cards is not enough')
+
+		if (self._get_total_value(dealer_cards) < self._get_total_value(player_cards)
+			or (self._get_total_value(dealer_cards) == self._get_total_value(player_cards)
+				and self._is_lucky_9(player_cards))):
+			return self.payout_lucky9
 
 		return 0

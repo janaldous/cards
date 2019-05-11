@@ -254,7 +254,7 @@ class Lucky9PayoutBonusTest(unittest.TestCase):
 		winning = calculator.calculate_bonus_winning(dealer_up_card, player_cards)
 		self.assertEqual(5, winning)
 
-	def test_payout_bonus_scenario_any_total_9_natural(self):
+	def test_payout_bonus_scenario_any_natural(self):
 		calculator = Lucky9PayoutCalculator()
 		dealer_up_card = Lucky9Card('spade', 10)
 		player_cards = [Lucky9Card('club', 3), Lucky9Card('diamond', 6)]
@@ -262,14 +262,14 @@ class Lucky9PayoutBonusTest(unittest.TestCase):
 		self.assertEqual(5, winning)
 
 class Lucky9PayoutTieTest(unittest.TestCase):
-	def test_payout_bonus_player_not_enough_cards(self):
+	def test_payout_tie_player_not_enough_cards(self):
 		calculator = Lucky9PayoutCalculator()
 		dealer_cards = [Lucky9Card('spade', 1), Lucky9Card('spade', 2),
 							Lucky9Card('spade', 3)]
 		player_cards = [Lucky9Card('spade', 2)]
 		self.assertRaises(ValueError, calculator.calculate_tie_winning, dealer_cards, player_cards)
 
-	def test_payout_bonus_dealer_not_enough_cards(self):
+	def test_payout_tie_dealer_not_enough_cards(self):
 		calculator = Lucky9PayoutCalculator()
 		dealer_cards = [Lucky9Card('spade', 2)]
 		player_cards = [Lucky9Card('spade', 1), Lucky9Card('spade', 2),
@@ -293,3 +293,63 @@ class Lucky9PayoutTieTest(unittest.TestCase):
 							Lucky9Card('spade', 4)]
 		winning = calculator.calculate_tie_winning(dealer_cards, player_cards)
 		self.assertEqual(7, winning)
+
+class Lucky9PayoutBetTest(unittest.TestCase):
+	def test_payout_bet_player_not_enough_cards(self):
+		calculator = Lucky9PayoutCalculator()
+		dealer_cards = [Lucky9Card('spade', 1), Lucky9Card('spade', 2),
+							Lucky9Card('spade', 3)]
+		player_cards = [Lucky9Card('spade', 4)]
+		self.assertRaises(ValueError, calculator.calculate_bet_winning, dealer_cards, player_cards)
+
+	def test_payout_bet_dealer_not_enough_cards(self):
+		calculator = Lucky9PayoutCalculator()
+		dealer_cards = [Lucky9Card('spade', 2)]
+		player_cards = [Lucky9Card('spade', 1), Lucky9Card('spade', 3),
+							Lucky9Card('spade', 4)]
+		self.assertRaises(ValueError, calculator.calculate_bet_winning, dealer_cards, player_cards)
+
+	def test_payout_bet_dealer_more_than_player(self):
+		calculator = Lucky9PayoutCalculator()
+		dealer_cards = [Lucky9Card('spade', 2), Lucky9Card('club', 3),
+							Lucky9Card('spade', 4)]
+		player_cards = [Lucky9Card('club', 1), Lucky9Card('diamond', 2),
+							Lucky9Card('club', 3)]
+		winning = calculator.calculate_bet_winning(dealer_cards, player_cards)
+		self.assertEqual(0, winning)
+
+	def test_payout_bet_dealer_lucky_9_player_total_9(self):
+		calculator = Lucky9PayoutCalculator()
+		dealer_cards = [Lucky9Card('spade', 2), Lucky9Card('club', 3),
+							Lucky9Card('spade', 4)]
+		player_cards = [Lucky9Card('club', 10), Lucky9Card('diamond', 7),
+							Lucky9Card('club', 2)]
+		winning = calculator.calculate_bet_winning(dealer_cards, player_cards)
+		self.assertEqual(0, winning)
+
+	def test_payout_bet_dealer_total_9_player_lucky_9(self):
+		calculator = Lucky9PayoutCalculator()
+		dealer_cards = [Lucky9Card('club', 10), Lucky9Card('diamond', 7),
+							Lucky9Card('club', 2)]
+		player_cards = [Lucky9Card('spade', 2), Lucky9Card('club', 3),
+							Lucky9Card('spade', 4)]
+		winning = calculator.calculate_bet_winning(dealer_cards, player_cards)
+		self.assertEqual(1.5, winning)
+
+	def test_payout_bet_player_wins_total_9_dealer_not_9(self):
+		calculator = Lucky9PayoutCalculator()
+		dealer_cards = [Lucky9Card('club', 1), Lucky9Card('diamond', 2),
+							Lucky9Card('club', 3)]
+		player_cards = [Lucky9Card('spade', 2), Lucky9Card('club', 3),
+												Lucky9Card('spade', 4)]
+		winning = calculator.calculate_bet_winning(dealer_cards, player_cards)
+		self.assertEqual(1.5, winning)
+
+	def test_payout_bet_player_wins_natural_9_dealer_not_9(self):
+		calculator = Lucky9PayoutCalculator()
+		dealer_cards = [Lucky9Card('club', 1), Lucky9Card('diamond', 2),
+							Lucky9Card('club', 3)]
+		player_cards = [Lucky9Card('spade', 10), Lucky9Card('club', 3),
+												Lucky9Card('spade', 5)]
+		winning = calculator.calculate_bet_winning(dealer_cards, player_cards)
+		self.assertEqual(1.5, winning)
