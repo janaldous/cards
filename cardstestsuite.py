@@ -18,4 +18,4 @@ runner = unittest.TextTestRunner(verbosity=3)
 result = runner.run(suite)
 
 #return 1 if there all test are successful otherwise 0
-sys.exit(len(result.errors) == 0)
+sys.exit(len(result.errors))
